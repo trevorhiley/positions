@@ -1,4 +1,3 @@
+This is the readme.
 
-
-/mingw64/bin:/usr/bin:/c/Users/hiley/bin:/mingw64/bin:/usr/bin:/c/Users/hiley/bin:/c/Program Files/Docker/Docker/Resources/bin:/c/Program Files (x86)/Intel/iCLS Client:/c/Program Files/Intel/iCLS Client:/c/Windows/system32:/c/Windows:/c/Windows/System32/Wbem:/c/Windows/System32/WindowsPowerShell/v1.0:/c/Program Files (x86)/Intel/Intel(R) Management Engine Components/DAL:/c/Program Files/Intel/Intel(R) Management Engine Components/DAL:/c/Program Files (x86)/Intel/Intel(R) Management Engine Components/IPT:/c/Program Files/Intel/Intel(R) Management Engine Components/IPT:/c/Program Files/nodejs:/c/1/bin:/cmd:/c/Program Files/erl9.2/bin:/c/Program Files (x86)/Elixir/bin:/c/Users/hiley/.mix/escripts:/c/Program Files (x86)/NVIDIA Corporation/PhysX/Common:/c/Program Files/Amazon/AWSCLI:/c/WINDOWS/system32:/c/WINDOWS:/c/WINDOWS/System32/Wbem:/c/WINDOWS/System32/WindowsPowerShell/v1.0:/c/WINDOWS/System32/OpenSSH:/c/Program
-Files/Microsoft VS Code/bin:/c/Users/hiley/AppData/Local/Microsoft/WindowsApps:/c/Program Files/Microsoft VS Code/bin:/c/Users/hiley/AppData/Roaming/npm:/c/Users/hiley/AppData/Local/Programs/Microsoft VS Code/bin
+Good stuff will go here.
