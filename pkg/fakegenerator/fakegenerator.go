@@ -112,7 +112,7 @@ func writeFile(position position.Header, dirName string) error {
 	// bytes) into a file.
 	dateString := position.Portfolios[0].AsofDate.Format("2006-01-02")
 	uuidNoDash := position.Portfolios[0].PortfolioID.String()
-	filename := fmt.Sprintf("/%s/%s/%s_poistions.json", dateString, uuidNoDash, uuidNoDash)
+	filename := fmt.Sprintf("/%s/%s/%s_positions.json", dateString, uuidNoDash, uuidNoDash)
 	//err = ioutil.WriteFile(fmt.Sprintf("%s/%s.json", dirName, filename), d1, 0644)
 
 	input := &s3.PutObjectInput{
