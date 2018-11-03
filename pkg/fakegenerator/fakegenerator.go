@@ -11,10 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/trevorhiley/positions/pkg/header"
-	"github.com/trevorhiley/positions/pkg/investments"
-	"github.com/trevorhiley/positions/pkg/lots"
-	"github.com/trevorhiley/positions/pkg/portfolios"
+	"github.com/trevorhiley/positions/pkg/position"
 )
 
 func init() {
@@ -79,7 +76,7 @@ func removeContents(dir string) error {
 	return nil
 }
 
-func writeFile(position header.Header, dirName string) error {
+func writeFile(position position.Header, dirName string) error {
 
 	positionsJSON, err := json.Marshal(position)
 	if err != nil {
@@ -123,8 +120,8 @@ func createPosition(numberOfInvestments, numberOfLots int, dirName string) error
 	return nil
 }
 
-func createHeader() (header.Header, error) {
-	positions := header.Header{}
+func createHeader() (position.Header, error) {
+	positions := position.Header{}
 
 	messageID, err := uuid.NewUUID()
 
@@ -139,14 +136,14 @@ func createHeader() (header.Header, error) {
 	return positions, nil
 }
 
-func createPortfolio(numberOfInvestments int, numberOfLots int) (portfolios.Portfolio, error) {
+func createPortfolio(numberOfInvestments int, numberOfLots int) (position.Portfolio, error) {
 	messageID, err := uuid.NewUUID()
 
 	if err != nil {
-		return portfolios.Portfolio{}, fmt.Errorf("An error occurred")
+		return position.Portfolio{}, fmt.Errorf("An error occurred")
 	}
 
-	newPortfolio := portfolios.Portfolio{
+	newPortfolio := position.Portfolio{
 		PortfolioID:       messageID,
 		AsofDate:          time.Now(),
 		AccountingBasisID: 1,
@@ -156,7 +153,7 @@ func createPortfolio(numberOfInvestments int, numberOfLots int) (portfolios.Port
 		newInvestment, err := createInvestment(numberOfLots)
 
 		if err != nil {
-			return portfolios.Portfolio{}, fmt.Errorf("An error occurred")
+			return position.Portfolio{}, fmt.Errorf("An error occurred")
 		}
 
 		newPortfolio.Investments = append(newPortfolio.Investments, newInvestment)
@@ -165,8 +162,8 @@ func createPortfolio(numberOfInvestments int, numberOfLots int) (portfolios.Port
 	return newPortfolio, nil
 }
 
-func createInvestment(numberOfLots int) (investments.Investment, error) {
-	newInvestment := investments.Investment{
+func createInvestment(numberOfLots int) (position.Investment, error) {
+	newInvestment := position.Investment{
 		InvestmentID: createRandomInt(80, 30000),
 		CostValue:    createRandomFloat(100000, 100000000),
 		BookValue:    createRandomFloat(100000, 100000000),
@@ -177,7 +174,7 @@ func createInvestment(numberOfLots int) (investments.Investment, error) {
 		newLot, err := createLot()
 
 		if err != nil {
-			return investments.Investment{}, fmt.Errorf("An error occurred")
+			return position.Investment{}, fmt.Errorf("An error occurred")
 		}
 
 		newInvestment.Lots = append(newInvestment.Lots, newLot)
@@ -186,15 +183,15 @@ func createInvestment(numberOfLots int) (investments.Investment, error) {
 	return newInvestment, nil
 }
 
-func createLot() (lots.Lot, error) {
+func createLot() (position.Lot, error) {
 
 	messageID, err := uuid.NewUUID()
 
 	if err != nil {
-		return lots.Lot{}, fmt.Errorf("An error occurred")
+		return position.Lot{}, fmt.Errorf("An error occurred")
 	}
 
-	newLot := lots.Lot{
+	newLot := position.Lot{
 		LotID:     messageID,
 		CostValue: createRandomFloat(100000, 100000000),
 		BookValue: createRandomFloat(100000, 100000000),
