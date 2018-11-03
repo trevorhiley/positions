@@ -4,7 +4,10 @@
 *.dll
 *.so
 *.dylib
+.ds_store
 /vendor
+/files
+generatefiles
 
 # Test binary, build with `go test -c`
 *.test

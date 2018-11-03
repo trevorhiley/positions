@@ -1,8 +1,13 @@
 package fakegenerator
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,23 +22,105 @@ func init() {
 }
 
 //CreateFakePositions create fake positions
-func CreateFakePositions(numberOfPorfolios int, numberOfInvestments int, numberOfLots int) (header.Header, error) {
+func CreateFakePositions(numberOfPorfolios int, numberOfInvestments int, numberOfLots int) error {
+	dirName := "../../files"
+	removeContents(dirName)
+
+	jobs := make(chan int, numberOfPorfolios)
+	results := make(chan int, 100)
+
+	for w := 1; w <= 8; w++ {
+		go worker(w, numberOfInvestments, numberOfLots, dirName, jobs, results)
+	}
+
+	// Here we send 5 `jobs` and then `close` that
+	// channel to indicate that's all the work we have.
+	for j := 0; j <= numberOfPorfolios; j++ {
+		jobs <- j
+	}
+	close(jobs)
+
+	// Finally we collect all the results of the work.
+	for a := 0; a <= numberOfPorfolios; a++ {
+		<-results
+	}
+
+	return nil
+}
+
+func worker(id int, numberOfInvestments int, numberOfLots int, dirName string, jobs <-chan int, results chan<- int) {
+	for j := range jobs {
+		//fmt.Println("worker", id, "started  job", j)
+		err := createPosition(numberOfInvestments, numberOfLots, dirName)
+		if err != nil {
+			fmt.Printf("An error occurred: %v", err)
+		}
+		//fmt.Println("worker", id, "finished job", j)
+		results <- j * 2
+	}
+}
+
+func removeContents(dir string) error {
+	d, err := os.Open(dir)
+	if err != nil {
+		return err
+	}
+	defer d.Close()
+	names, err := d.Readdirnames(-1)
+	if err != nil {
+		return err
+	}
+	for _, name := range names {
+		err = os.RemoveAll(filepath.Join(dir, name))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func writeFile(position header.Header, dirName string) error {
+
+	positionsJSON, err := json.Marshal(position)
+	if err != nil {
+		fmt.Println("error:", err)
+		return err
+	}
+
+	// To start, here's how to dump a string (or just
+	// bytes) into a file.
+	d1 := []byte(positionsJSON)
+	filename := strings.Replace(position.Portfolios[0].PortfolioID.String(), "-", "", -1)
+	err = ioutil.WriteFile(fmt.Sprintf("%s/postions_%s.json", dirName, filename), d1, 0644)
+
+	if err != nil {
+		fmt.Println("error:", err)
+		return err
+	}
+
+	return nil
+}
+
+func createPosition(numberOfInvestments, numberOfLots int, dirName string) error {
 	positions, err := createHeader()
 
 	if err != nil {
-		return positions, fmt.Errorf("An error occurred")
+		return fmt.Errorf("An error occurred")
+	}
+	newPortfolio, err := createPortfolio(numberOfInvestments, numberOfLots)
+	if err != nil {
+		return fmt.Errorf("An error occurred")
 	}
 
-	for i := 0; i <= numberOfPorfolios; i++ {
-		newPortfolio, err := createPortfolio(numberOfInvestments, numberOfLots)
-		if err != nil {
-			return positions, fmt.Errorf("An error occurred")
-		}
+	positions.Portfolios = append(positions.Portfolios, newPortfolio)
 
-		positions.Portfolios = append(positions.Portfolios, newPortfolio)
+	err = writeFile(positions, dirName)
+
+	if err != nil {
+		return fmt.Errorf("An error occurred")
 	}
 
-	return positions, nil
+	return nil
 }
 
 func createHeader() (header.Header, error) {
