@@ -1,18 +1,27 @@
 package fakegenerator
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
+
+	"github.com/aws/aws-sdk-go/service/s3"
+
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/session"
+
+	"github.com/aws/aws-sdk-go/aws"
 
 	"github.com/google/uuid"
 	"github.com/trevorhiley/positions/pkg/position"
 )
+
+var svc *s3.S3
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -20,6 +29,9 @@ func init() {
 
 //CreateFakePositions create fake positions
 func CreateFakePositions(numberOfPorfolios int, numberOfInvestments int, numberOfLots int) error {
+	svc = s3.New(session.New(&aws.Config{
+		Region: aws.String("us-east-1"),
+	}))
 	dirName := "../../files"
 	removeContents(dirName)
 
@@ -32,13 +44,13 @@ func CreateFakePositions(numberOfPorfolios int, numberOfInvestments int, numberO
 
 	// Here we send 5 `jobs` and then `close` that
 	// channel to indicate that's all the work we have.
-	for j := 0; j <= numberOfPorfolios; j++ {
+	for j := 0; j < numberOfPorfolios; j++ {
 		jobs <- j
 	}
 	close(jobs)
 
 	// Finally we collect all the results of the work.
-	for a := 0; a <= numberOfPorfolios; a++ {
+	for a := 0; a < numberOfPorfolios; a++ {
 		<-results
 	}
 
@@ -84,15 +96,45 @@ func writeFile(position position.Header, dirName string) error {
 		return err
 	}
 
+	var b bytes.Buffer
+	gz := gzip.NewWriter(&b)
+	if _, err := gz.Write(positionsJSON); err != nil {
+		panic(err)
+	}
+	if err := gz.Flush(); err != nil {
+		panic(err)
+	}
+	if err := gz.Close(); err != nil {
+		panic(err)
+	}
+
 	// To start, here's how to dump a string (or just
 	// bytes) into a file.
-	d1 := []byte(positionsJSON)
-	filename := strings.Replace(position.Portfolios[0].PortfolioID.String(), "-", "", -1)
-	err = ioutil.WriteFile(fmt.Sprintf("%s/postions_%s.json", dirName, filename), d1, 0644)
+	dateString := position.Portfolios[0].AsofDate.Format("2006-01-02")
+	uuidNoDash := position.Portfolios[0].PortfolioID.String()
+	filename := fmt.Sprintf("/%s/%s/%s_poistions.json", dateString, uuidNoDash, uuidNoDash)
+	//err = ioutil.WriteFile(fmt.Sprintf("%s/%s.json", dirName, filename), d1, 0644)
 
+	input := &s3.PutObjectInput{
+		Body:   aws.ReadSeekCloser(bytes.NewReader(b.Bytes())),
+		Bucket: aws.String("positions-sample-files-go"),
+		Key:    aws.String(filename),
+	}
+
+	_, err = svc.PutObject(input)
 	if err != nil {
-		fmt.Println("error:", err)
-		return err
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			default:
+				fmt.Println(err)
+				return err
+			}
+		} else {
+			// Print the error, cast err to awserr.Error to get the Code and
+			// Message from an error.
+			fmt.Println(err)
+			return err
+		}
 	}
 
 	return nil
@@ -145,7 +187,7 @@ func createPortfolio(numberOfInvestments int, numberOfLots int) (position.Portfo
 
 	newPortfolio := position.Portfolio{
 		PortfolioID:       messageID,
-		AsofDate:          time.Now(),
+		AsofDate:          createAsofDate(time.Now()),
 		AccountingBasisID: 1,
 	}
 
@@ -199,6 +241,12 @@ func createLot() (position.Lot, error) {
 	}
 
 	return newLot, nil
+}
+
+func createAsofDate(timeIn time.Time) time.Time {
+	year, month, day := timeIn.Date()
+	parsedAsofDate := time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
+	return parsedAsofDate
 }
 
 func createRandomInt(min int, max int) int {

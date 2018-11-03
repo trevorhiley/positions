@@ -6,8 +6,8 @@ import (
 	"github.com/trevorhiley/positions/pkg/fakegenerator"
 )
 
-const numberOfPortfolios int = 1000
-const numberOfInvestments int = 10
+const numberOfPortfolios int = 10
+const numberOfInvestments int = 100
 const numberOfLots int = 100
 
 //Main runs the package
